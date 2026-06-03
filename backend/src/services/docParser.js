@@ -1,4 +1,5 @@
-import { readdirSync, readFileSync, statSync, createHash } from 'fs';
+import { readdirSync, readFileSync, statSync } from 'fs';
+import { createHash } from 'crypto';
 import { join, extname, relative } from 'path';
 
 const CHUNK_TOKENS = 500;
