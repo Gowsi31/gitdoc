@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Workspace {
+  id        String   @id @default(uuid())
+  name      String
+  ownerId   String   @map("owner_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  projects Project[]
+  members  WorkspaceMember[]
+
+  @@map("workspaces")
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  repos     Repo[]
+  invites   Invite[]
+  qaHistory QaHistory[]
+
+  @@map("projects")
+}
+
+model Repo {
+  id             String    @id @default(uuid())
+  projectId      String    @map("project_id")
+  gitUrl         String    @map("git_url")
+  isPrivate      Boolean   @default(false) @map("is_private")
+  encryptedToken String?   @map("encrypted_token")
+  lastSyncedAt   DateTime? @map("last_synced_at")
+  docCount       Int       @default(0) @map("doc_count")
+  syncError      String?   @map("sync_error")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  docChunks  DocChunk[]
+
+  @@map("repos")
+}
+
+model DocChunk {
+  id         String   @id @default(uuid())
+  repoId     String   @map("repo_id")
+  filePath   String   @map("file_path")
+  chunkIndex Int      @map("chunk_index")
+  content    String
+  fileHash   String   @map("file_hash")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  repo Repo @relation(fields: [repoId], references: [id], onDelete: Cascade)
+
+  @@map("doc_chunks")
+}
+
+model WorkspaceMember {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+  userId      String   @map("user_id")
+  role        String   @default("member")
+  joinedAt    DateTime @default(now()) @map("joined_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+model Invite {
+  id        String    @id @default(uuid())
+  projectId String    @map("project_id")
+  token     String    @unique
+  email     String?
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("invites")
+}
+
+model QaHistory {
+  id        String   @id @default(uuid())
+  projectId String   @map("project_id")
+  userId    String   @map("user_id")
+  question  String
+  answer    String
+  sources   Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("qa_history")
+}
