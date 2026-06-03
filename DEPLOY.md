@@ -4,9 +4,8 @@
 
 | Service | Purpose | Sign up |
 |---|---|---|
-| Supabase | Database + auth | supabase.com |
-| OpenAI | Embeddings | platform.openai.com |
-| Anthropic | Claude Q&A | console.anthropic.com |
+| Supabase | Database + pgvector | supabase.com |
+| OpenAI | Embeddings + Q&A (GPT-4o-mini) | platform.openai.com |
 | Vercel | Frontend hosting | vercel.com |
 | Render | Backend hosting | render.com |
 | UptimeRobot | Keep-alive pings | uptimerobot.com |
@@ -28,11 +27,6 @@
 
 1. Go to **platform.openai.com/api-keys**
 2. Create a new key → copy it as `OPENAI_API_KEY`
-
-## Step 3 — Anthropic API key
-
-1. Go to **console.anthropic.com/keys**
-2. Create a new key → copy it as `ANTHROPIC_API_KEY`
 
 ## Step 4 — Run Prisma migration (one-time)
 
@@ -71,7 +65,6 @@ Set this environment variable in Vercel dashboard:
 | `DIRECT_URL` | Supabase session connection string |
 | `TOKEN_ENCRYPTION_KEY` | `c7e2781f78a92ca3b3e8f059bb50c9516fe6ce427d9008aa096405664e62a3af` |
 | `OPENAI_API_KEY` | Your OpenAI key |
-| `ANTHROPIC_API_KEY` | Your Anthropic key |
 | `FRONTEND_URL` | Your Vercel frontend URL |
 | `NODE_ENV` | `production` |
 
