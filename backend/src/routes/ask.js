@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { embedQuery } from '../services/embedder.js';
 
 const router = Router();
 const prisma = new PrismaClient();
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // POST /api/ask
 router.post('/', async (req, res) => {
@@ -64,26 +64,28 @@ router.post('/', async (req, res) => {
 Be concise and specific. Always cite which file your answer comes from using [1], [2], etc. notation.
 If the documentation doesn't contain enough information to fully answer, say so clearly.`;
 
-  const userMessage = `Documentation excerpts:\n\n${docContext}\n\n---\n\nQuestion: ${question}`;
-
-  // 5. Stream response from Claude
+  // 5. Stream response via OpenAI
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
   let fullAnswer = '';
 
-  const stream = anthropic.messages.stream({
-    model: 'claude-sonnet-4-6',
+  const stream = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
     max_tokens: 1024,
-    system: systemPrompt,
-    messages: [{ role: 'user', content: userMessage }],
+    stream: true,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: `Documentation excerpts:\n\n${docContext}\n\n---\n\nQuestion: ${question}` },
+    ],
   });
 
-  for await (const event of stream) {
-    if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-      fullAnswer += event.delta.text;
-      res.write(`data: ${JSON.stringify({ type: 'delta', text: event.delta.text })}\n\n`);
+  for await (const chunk of stream) {
+    const text = chunk.choices[0]?.delta?.content || '';
+    if (text) {
+      fullAnswer += text;
+      res.write(`data: ${JSON.stringify({ type: 'delta', text })}\n\n`);
     }
   }
 
